@@ -51,7 +51,15 @@ export class MessageData {
     // TODO Min - Max on limit. There is an issue
     // with using a limit of zero as it would return
     // all messages from a conversation
-    if (data.limit === 0) data.limit = 40;
+    const minLim = 1;
+    const maxLim = 40;
+  
+    // Ensure the limit is within the specified range
+    if (data.limit < minLim) {
+      data.limit = minLim;
+    } else if (data.limit > maxLim) {
+      data.limit = maxLim;
+    }
     const hasMoreLimit: number = data.limit + 1;
 
     const query: FilterQuery<ChatMessageDocument> = {
@@ -88,8 +96,20 @@ export class MessageData {
   }
 
   async delete(messageId: ObjectID): Promise<ChatMessage> {
-    // TODO allow a message to be marked as deleted
-    return new ChatMessage() // Minimum to pass ts checks -replace this
+    // // TODO allow a message to be marked as deleted
+    // return new ChatMessage() // Minimum to pass ts checks -replace this
+    const filterBy = { _id: messageId };
+    const updateProperty = { deleted: true };
+    const deleted = await this.chatMessageModel.findOneAndUpdate(
+      filterBy,
+      updateProperty,
+      {
+        new: true,
+        returnOriginal: false,
+      },
+    );
+    if (!deleted) throw new Error('The message was not deleted');
+    return chatMessageToObject(deleted);
   }
 
   async resolve(messageId: ObjectID): Promise<ChatMessage> {
